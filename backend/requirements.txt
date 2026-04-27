@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pandas
+numpy
+scikit-learn
+fairlearn
+google-genai
+python-dotenv
+python-multipart
+sse-starlette
+pydantic
+faker
