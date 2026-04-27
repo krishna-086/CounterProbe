@@ -30,7 +30,15 @@ app = FastAPI(title="CounterProbe API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "*"],
+    # Explicit allowlist — wildcard `"*"` is incompatible with
+    # `allow_credentials=True` per the CORS spec, so each origin is named.
+    allow_origins=[
+        "http://localhost:3000",
+        "https://fairlens-494522.web.app",
+        "https://fairlens-494522.firebaseapp.com",
+        "https://counterprobe.web.app",
+        "https://counterprobe.firebaseapp.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "fairlens-494522"
+  },
+  "targets": {
+    "fairlens-494522": {
+      "hosting": {
+        "counterprobe": [
+          "counterprobe"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
