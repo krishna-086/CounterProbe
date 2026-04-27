@@ -14,7 +14,13 @@ Most fairness audits rank models by aggregate group statistics — disparate imp
 🔗 **Live demo:** [counterprobe.web.app](https://counterprobe.web.app)
 🔗 **Backend API:** [counterprobe-api-135348320435.asia-south1.run.app](https://counterprobe-api-135348320435.asia-south1.run.app)
 
-> _Screenshot placeholder — `docs/screenshot-cve-report.png` once added._
+**The finding** — every individual decision the model gets wrong, severity-graded with replayable evidence:
+
+![CounterProbe CVE report on the demo dataset](docs/screenshot-cve-report.jpeg)
+
+**The proof** — apply a Gemini-recommended fix, replay the same probes, watch the failure rate collapse:
+
+![Before / after rescan: failure rate 9.6% → 0.0%](docs/screenshot-rescan-proof.jpeg)
 
 ---
 
