@@ -21,6 +21,7 @@ import {
   AlertCircle,
   AlertOctagon,
   AlertTriangle,
+  Check,
   Info,
   ShieldCheck,
   Wrench,
@@ -40,6 +41,7 @@ import { Separator } from "@/components/ui/separator";
 import type {
   CVEEntry,
   ProbeProgress as ProbeProgressEvent,
+  RescanComparison,
   Severity,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -49,6 +51,8 @@ interface CVEReportProps {
   summary: ProbeProgressEvent;
   /** Highlight the currently selected CVE (e.g. while remediation panel is open). */
   selectedCveId?: string | null;
+  /** Per-CVE rescan results so the card can show fixed/unresolved state. */
+  rescanByCveId?: Record<string, RescanComparison>;
   onFix?: (cveId: string) => void;
 }
 
@@ -56,6 +60,7 @@ export function CVEReport({
   cves,
   summary,
   selectedCveId,
+  rescanByCveId,
   onFix,
 }: CVEReportProps) {
   const counts = useMemo(() => {
@@ -94,6 +99,7 @@ export function CVEReport({
               key={cve.id}
               cve={cve}
               selected={selectedCveId === cve.id}
+              rescan={rescanByCveId?.[cve.id]}
               onFix={() => onFix?.(cve.id)}
             />
           ))}
@@ -219,14 +225,18 @@ function SeverityCount({
 function CVECard({
   cve,
   selected,
+  rescan,
   onFix,
 }: {
   cve: CVEEntry;
   selected: boolean;
+  rescan?: RescanComparison;
   onFix: () => void;
 }) {
   const cfg = SEVERITY_STYLE[cve.severity];
   const ev = cve.evidence;
+  const isFixed = !!rescan && rescan.after_failure_rate < rescan.before_failure_rate;
+  const isUnresolved = !!rescan && !isFixed;
 
   return (
     <Card
@@ -234,23 +244,36 @@ function CVECard({
         "border bg-card transition-shadow",
         cfg.cardBorder,
         selected && "ring-2 ring-[#6366F1]/40",
+        isFixed && "opacity-80",
       )}
     >
       <CardHeader className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <SeverityBadge severity={cve.severity} />
+            {isFixed ? <FixedBadge /> : null}
+            {isUnresolved ? <UnresolvedBadge /> : null}
             <span className="font-mono text-xs font-medium tracking-wider text-zinc-500">
               {cve.id}
             </span>
           </div>
-          <Button
-            onClick={onFix}
-            className="bg-[#6366F1] font-semibold text-white hover:bg-[#6366F1]/90"
-          >
-            <Wrench className="mr-2 h-4 w-4" />
-            Fix &amp; verify
-          </Button>
+          {isFixed ? (
+            <Button
+              disabled
+              className="border border-emerald-500/40 bg-emerald-500/15 font-semibold text-emerald-200 disabled:opacity-100"
+            >
+              <Check className="mr-2 h-4 w-4" />
+              Fixed
+            </Button>
+          ) : (
+            <Button
+              onClick={onFix}
+              className="bg-[#6366F1] font-semibold text-white hover:bg-[#6366F1]/90"
+            >
+              <Wrench className="mr-2 h-4 w-4" />
+              {isUnresolved ? "Try another fix" : "Fix & verify"}
+            </Button>
+          )}
         </div>
         <div>
           <CardTitle className="text-2xl font-bold tracking-tight text-zinc-100">
@@ -265,6 +288,8 @@ function CVECard({
 
       <CardContent className="space-y-5">
         <EvidenceGrid evidence={ev} />
+
+        {rescan ? <RescanSummary rescan={rescan} fixed={isFixed} /> : null}
 
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
@@ -298,6 +323,72 @@ function CVECard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function FixedBadge() {
+  return (
+    <Badge className="flex items-center gap-1 border border-emerald-500/40 bg-emerald-500/15 font-mono text-[11px] font-bold uppercase tracking-wider text-emerald-300">
+      <Check className="h-3 w-3" />
+      fixed
+    </Badge>
+  );
+}
+
+function UnresolvedBadge() {
+  return (
+    <Badge className="flex items-center gap-1 border border-amber-400/40 bg-amber-500/15 font-mono text-[11px] font-bold uppercase tracking-wider text-amber-300">
+      <AlertTriangle className="h-3 w-3" />
+      unresolved
+    </Badge>
+  );
+}
+
+function RescanSummary({
+  rescan,
+  fixed,
+}: {
+  rescan: RescanComparison;
+  fixed: boolean;
+}) {
+  const beforePct = (rescan.before_failure_rate * 100).toFixed(1);
+  const afterPct = (rescan.after_failure_rate * 100).toFixed(1);
+  const accBefore = (rescan.accuracy_before * 100).toFixed(1);
+  const accAfter = (rescan.accuracy_after * 100).toFixed(1);
+
+  if (!fixed) {
+    return (
+      <div className="flex items-start gap-2 rounded-md border border-amber-400/30 bg-amber-500/5 px-3 py-2.5 font-mono text-xs text-amber-200">
+        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>
+          Fix attempted: failure rate unchanged ({beforePct}% → {afterPct}%).
+          Try another strategy.
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-emerald-400/30 bg-emerald-500/5 px-3 py-2.5 font-mono text-xs text-emerald-100">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <span className="flex items-center gap-1.5">
+          <Check className="h-3.5 w-3.5 text-emerald-400" />
+          <span className="text-emerald-300">Before:</span>
+          <span className="line-through decoration-emerald-700/60">
+            {beforePct}%
+          </span>
+          <span className="text-emerald-400">→</span>
+          <span className="text-emerald-200">After: {afterPct}%</span>
+        </span>
+        <span className="text-emerald-300/60">|</span>
+        <span>
+          <span className="text-emerald-300">Accuracy:</span>{" "}
+          <span className="text-emerald-200">
+            {accBefore}% → {accAfter}%
+          </span>
+        </span>
+      </div>
+    </div>
   );
 }
 

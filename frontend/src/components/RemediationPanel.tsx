@@ -65,6 +65,8 @@ interface RemediationPanelProps {
   onOpenChange: (open: boolean) => void;
   sessionId: string;
   cve: CVEEntry | null;
+  /** Fired after a successful /api/rescan so the parent can update the CVE card. */
+  onRescanComplete?: (cveId: string, comparison: RescanComparison) => void;
 }
 
 export function RemediationPanel({
@@ -72,6 +74,7 @@ export function RemediationPanel({
   onOpenChange,
   sessionId,
   cve,
+  onRescanComplete,
 }: RemediationPanelProps) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [remediation, setRemediation] = useState<RemediationResponse | null>(
@@ -124,6 +127,7 @@ export function RemediationPanel({
       const result = await runRescan(sessionId, cve.id, selectedIdx);
       setComparison(result);
       setPhase("complete");
+      onRescanComplete?.(cve.id, result);
     } catch (e) {
       setError(
         e instanceof ApiError ? e.message : "Rescan failed unexpectedly.",

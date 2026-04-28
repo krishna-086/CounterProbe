@@ -262,8 +262,6 @@ allow_origins=[
     "http://localhost:3000",
     "https://counterprobe.web.app",
     "https://counterprobe.firebaseapp.com",
-    "https://fairlens-494522.web.app",
-    "https://fairlens-494522.firebaseapp.com",
 ]
 ```
 
@@ -319,7 +317,6 @@ Seeded with `random.seed(42)` and per-locale `Faker.seed_instance(42 + i)` — r
 ```
 counterprobe/
 ├── README.md                           ← you are here
-├── CLAUDE.md                           ← dev/agent instructions
 ├── .gitignore
 ├── frontend/                           ← Next.js static export → Firebase Hosting
 │   ├── src/

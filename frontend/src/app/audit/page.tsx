@@ -49,6 +49,7 @@ import type {
   CVEEntry,
   ProbeProgress as ProbeProgressEvent,
   ProbeResult,
+  RescanComparison,
   UploadResponse,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -81,6 +82,9 @@ export default function AuditPage() {
     useState<ProbeProgressEvent | null>(null);
   const [cves, setCves] = useState<CVEEntry[] | null>(null);
   const [selectedCveId, setSelectedCveId] = useState<string | null>(null);
+  const [rescanByCveId, setRescanByCveId] = useState<
+    Record<string, RescanComparison>
+  >({});
 
   function handleUploaded(response: UploadResponse) {
     setSessionId(response.session_id);
@@ -91,6 +95,7 @@ export default function AuditPage() {
     setProbeSummary(null);
     setCves(null);
     setSelectedCveId(null);
+    setRescanByCveId({});
   }
 
   function handleBaselineConfirmed(payload: BaselineConfirmedPayload) {
@@ -99,6 +104,7 @@ export default function AuditPage() {
     setProbeSummary(null);
     setCves(null);
     setSelectedCveId(null);
+    setRescanByCveId({});
     setStep("probe");
   }
 
@@ -107,11 +113,16 @@ export default function AuditPage() {
     setProbeSummary(payload.summary);
     setCves(payload.cves);
     setSelectedCveId(null);
+    setRescanByCveId({});
     setStep("report");
   }
 
   function handleSelectCveForFix(cveId: string) {
     setSelectedCveId(cveId);
+  }
+
+  function handleRescanComplete(cveId: string, comparison: RescanComparison) {
+    setRescanByCveId((prev) => ({ ...prev, [cveId]: comparison }));
   }
 
   const selectedCve =
@@ -198,6 +209,7 @@ export default function AuditPage() {
               cves={cves}
               summary={probeSummary}
               selectedCveId={selectedCveId}
+              rescanByCveId={rescanByCveId}
               onFix={handleSelectCveForFix}
             />
           </StepFrame>
@@ -212,6 +224,7 @@ export default function AuditPage() {
           }}
           sessionId={sessionId}
           cve={selectedCve}
+          onRescanComplete={handleRescanComplete}
         />
       ) : null}
 
