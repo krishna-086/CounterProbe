@@ -3,8 +3,7 @@
 ## What This Project Is
 
 CounterProbe is an adversarial fairness testing platform that red-teams AI models for
-hidden bias using counterfactual probing. It's being built for Google Solution
-Challenge 2026 hackathon.
+hidden bias using counterfactual probing.
 
 ## Architecture
 
